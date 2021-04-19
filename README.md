@@ -1,5 +1,7 @@
 # vision
 
+**nodejs + koa2 + vue2 + vue-router + vuex + echart5**
+
 ## Project setup
 ```
 yarn install
