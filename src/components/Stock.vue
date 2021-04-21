@@ -5,6 +5,8 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+import { getThemeValue } from '../utils/theme_utils'
 export default {
     name: 'Stock',
     data() {
@@ -15,24 +17,46 @@ export default {
             timer: null,
         }
     },
+    created() {
+        this.$socket.registerCallBack('stockData', this.getData)
+    },
     mounted() {
         this.initChart()
-        this.getData()
+        // this.getData()
+
+        // websocket 获取数据
+        this.$socket.send({
+            action: 'getData',
+            socketType: 'stockData',
+            chartName: 'stock',
+            value: '',
+        })
         window.addEventListener('resize', this.screenAdapter)
         this.screenAdapter()
     },
     destroyed() {
         window.removeEventListener('resize', this.screenAdapter)
         clearInterval(this.timer)
+        this.$socket.unRegisterCallBack('stockData')
+    },
+    computed: {
+        ...mapState(['theme']),
     },
     methods: {
         initChart() {
             this.chartInstance = this.$echarts.init(
                 this.$refs.stockRef,
-                'chalk'
+                this.theme
             )
             const initOption = {
-                title: { text: '▎库存和销量分析', left: 20, top: 20 },
+                title: {
+                    text: '▎库存和销量分析',
+                    left: 20,
+                    top: 20,
+                    fontStyle: {
+                        color: getThemeValue(this.theme).titleColor,
+                    },
+                },
             }
             this.chartInstance.setOption(initOption)
             this.chartInstance.on('mouseover', () => {
@@ -42,9 +66,10 @@ export default {
                 this.startInterval()
             })
         },
-        async getData() {
-            const { data: result } = await this.$http.get('stock')
+        getData(result) {
+            // const { data: result } = await this.$http.get('stock')
             this.allData = result
+            // console.log(this.allData)
             this.updataChart()
             this.startInterval()
         },
@@ -69,9 +94,9 @@ export default {
             const seriesArr = showData.map((item, index) => {
                 return {
                     type: 'pie',
-                    radius: [110, 100],
+                    // radius: [110, 100],
                     center: centerArr[index],
-                    labelLine: { show: false },
+                    // labelLine: { show: false },
                     zlevel: 3,
                     label: {
                         color: colorArr[index][0],
@@ -123,43 +148,48 @@ export default {
         },
         screenAdapter() {
             const titleFontSize = (this.$refs.stockRef.offsetWidth / 100) * 3.6
-            const innerRadius = titleFontSize * 2
-            const outerRadius = innerRadius * 1.125
+            const innerRadius = titleFontSize * 2.8
+            const outerRadius = innerRadius * 1.15
             const adapterOption = {
-                title: { textStyle: { fontSize: titleFontSize / 1.5 } },
+                title: { textStyle: { fontSize: titleFontSize } },
                 series: [
                     {
+                        type: 'pie',
                         radius: [outerRadius, innerRadius],
                         label: {
-                            fontSize: titleFontSize / 2,
+                            fontSize: titleFontSize * 0.75,
                             lineHeight: titleFontSize,
                         },
                     },
                     {
+                        type: 'pie',
                         radius: [outerRadius, innerRadius],
                         label: {
-                            fontSize: titleFontSize / 2,
+                            fontSize: titleFontSize * 0.75,
                             lineHeight: titleFontSize,
                         },
                     },
                     {
+                        type: 'pie',
                         radius: [outerRadius, innerRadius],
                         label: {
-                            fontSize: titleFontSize / 2,
+                            fontSize: titleFontSize * 0.75,
                             lineHeight: titleFontSize,
                         },
                     },
                     {
+                        type: 'pie',
                         radius: [outerRadius, innerRadius],
                         label: {
-                            fontSize: titleFontSize / 2,
+                            fontSize: titleFontSize * 0.75,
                             lineHeight: titleFontSize,
                         },
                     },
                     {
+                        type: 'pie',
                         radius: [outerRadius, innerRadius],
                         label: {
-                            fontSize: titleFontSize / 2,
+                            fontSize: titleFontSize * 0.75,
                             lineHeight: titleFontSize,
                         },
                     },

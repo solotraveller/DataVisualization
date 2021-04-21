@@ -6,6 +6,7 @@
 
 <script>
 import axios from 'axios'
+import { mapState } from 'vuex'
 import { getProvinceMapInfo } from '@/utils/map_utils'
 export default {
     name: 'Map',
@@ -17,18 +18,34 @@ export default {
             mapData: {}, // 缓存已查询的省级地图
         }
     },
+    computed: {
+        ...mapState(['theme']),
+    },
+    created() {
+        this.$socket.registerCallBack('mapData', this.getData)
+    },
     mounted() {
         this.initChart()
-        this.getData()
+        // this.getData()
+        this.$socket.send({
+            action: 'getData',
+            socketType: 'mapData',
+            chartName: 'map',
+            value: '',
+        })
         window.addEventListener('resize', this.screenAdapter)
         this.screenAdapter()
     },
     destroyed() {
         window.removeEventListener('resize', this.screenAdapter)
+        this.$socket.unRegisterCallBack('mapData')
     },
     methods: {
         async initChart() {
-            this.chartInstance = this.$echarts.init(this.$refs.mapRef, 'chalk')
+            this.chartInstance = this.$echarts.init(
+                this.$refs.mapRef,
+                this.theme
+            )
             // 获取中国地图矢量数据
             const result = await axios.get(
                 'http://localhost:8082/map/china.json'
@@ -66,14 +83,14 @@ export default {
                     this.$echarts.registerMap(provinceInfo.key, res.data)
                 }
                 const changOption = {
-                    geo: { map: provinceInfo.key }
+                    geo: { map: provinceInfo.key },
                 }
                 this.chartInstance.setOption(changOption)
             })
         },
-        async getData() {
+        getData(result) {
             // http://127.0.0.1:3000/map
-            const { data: result } = await this.$http.get('map')
+            // const { data: result } = await this.$http.get('map')
             this.allData = result
             this.updataChart()
         },

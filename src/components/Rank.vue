@@ -5,6 +5,7 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
 export default {
     name: 'Rank',
     data() {
@@ -16,19 +17,36 @@ export default {
             timer: null,
         }
     },
+    created() {
+        this.$socket.registerCallBack('rankData', this.getData)
+    },
     mounted() {
         this.initChart()
-        this.getData()
+        // this.getData()
+
+        this.$socket.send({
+            action: 'getData',
+            socketType: 'rankData',
+            chartName: 'rank',
+            value: '',
+        })
         window.addEventListener('resize', this.screenAdapter)
         this.screenAdapter()
     },
     destroyed() {
         window.removeEventListener('resize', this.screenAdapter)
         clearInterval(this.timer)
+        this.$socket.unRegisterCallBack('rankData', this.getData)
+    },
+    computed: {
+        ...mapState(['theme']),
     },
     methods: {
         initChart() {
-            this.chartInstance = this.$echarts.init(this.$refs.rankRef, 'chalk')
+            this.chartInstance = this.$echarts.init(
+                this.$refs.rankRef,
+                this.theme
+            )
             const initOption = {
                 title: {
                     text: '▎地区销售排行',
@@ -57,8 +75,8 @@ export default {
                 this.startInterval()
             })
         },
-        async getData() {
-            const { data: result } = await this.$http.get('rank')
+        getData(result) {
+            // const { data: result } = await this.$http.get('rank')
             this.allData = result
             this.allData.sort((a, b) => {
                 return a.value - b.value

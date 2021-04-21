@@ -12,6 +12,9 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+import { getThemeValue } from '../utils/theme_utils'
+
 export default {
     name: 'Hot',
     data() {
@@ -31,31 +34,48 @@ export default {
             }
         },
         comStyle() {
-            return { fontSize: this.titleFontSize + 'px' }
+            return {
+                fontSize: this.titleFontSize + 'px',
+                color: getThemeValue(this.theme).titleColor,
+            }
         },
+        ...mapState(['theme']),
+    },
+    created() {
+        this.$socket.registerCallBack('hotData', this.getData)
     },
     mounted() {
         this.initChart()
-        this.getData()
+        // this.getData()
+
+        this.$socket.send({
+            action: 'getData',
+            socketType: 'hotData',
+            chartName: 'hotproduct',
+            value: '',
+        })
         window.addEventListener('resize', this.screenAdapter)
         this.screenAdapter()
     },
     destroyed() {
         window.removeEventListener('resize', this.screenAdapter)
+        this.$socket.unRegisterCallBack('hotData')
     },
     methods: {
         initChart() {
-            this.chartInstance = this.$echarts.init(this.$refs.hotRef, 'chalk')
+            this.chartInstance = this.$echarts.init(
+                this.$refs.hotRef,
+                this.theme
+            )
             const initOption = {
                 title: {
                     text: '▎ 热销商品的占比',
                     left: 20,
                     top: 20,
                 },
-                legend: {
-                    top: '5%',
-                    icon: 'circle',
-                },
+                // legend: {
+                //     top: '15%',
+                // },
                 tooltip: {
                     show: true,
                     fomatter: (arg) => {
@@ -76,26 +96,26 @@ export default {
                 series: [
                     {
                         type: 'pie',
-                        label: { show: true, color: '#fff', fontSize: 14 },
-                        emphasis: {
-                            label: { show: true },
+                        label: {
+                            show: true,
+                            color: getThemeValue(this.theme).titleColor,
                         },
                     },
                 ],
             }
-            this.chartInstance.setOption(initOption)
+            this.chartInstance.setOption(initOption, this.theme)
         },
-        async getData() {
-            const { data: result } = await this.$http.get('hotproduct')
+        getData(result) {
+            // const { data: result } = await this.$http.get('hotproduct')
             this.allData = result
             this.updateChart()
         },
         updateChart() {
-            const legendData = this.allData[this.currentIndex].children.map(
-                (item) => {
-                    return item.name
-                }
-            )
+            // const legendData = this.allData[this.currentIndex].children.map(
+            //     (item) => {
+            //         return item.name
+            //     }
+            // )
             const seriesData = this.allData[this.currentIndex].children.map(
                 (item) => {
                     return {
@@ -106,7 +126,7 @@ export default {
                 }
             )
             const dataOption = {
-                legend: { data: legendData },
+                // legend: { data: legendData },
                 series: [{ data: seriesData }],
             }
             this.chartInstance.setOption(dataOption)
@@ -116,21 +136,22 @@ export default {
             const adapterOption = {
                 title: {
                     textStyle: {
-                        fontSize: this.titleFontSize / 1.5,
+                        fontSize: this.titleFontSize,
                     },
                 },
-                legend: {
-                    itemWidth: this.titleFontSize / 2,
-                    itemHeight: this.titleFontSize / 2,
-                    itemGap: this.titleFontSize / 2,
-                    textStyle: {
-                        fontSize: this.titleFontSize / 2,
-                    },
-                },
+                // legend: {
+                //     itemWidth: this.titleFontSize,
+                //     itemHeight: this.titleFontSize,
+                //     itemGap: this.titleFontSize,
+                //     textStyle: {
+                //         fontSize: this.titleFontSize * 0.75,
+                //     },
+                // },
                 series: [
                     {
-                        radius: this.titleFontSize * 4.5,
+                        radius: this.titleFontSize * 5,
                         center: ['50%', '50%'],
+                        label: { fontSize: this.titleFontSize * 0.75 },
                     },
                 ],
             }

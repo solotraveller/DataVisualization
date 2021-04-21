@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import '../../public/theme/chalk'
+import { mapState } from 'vuex'
 export default {
     name: 'Seller',
     data() {
@@ -17,9 +17,19 @@ export default {
             timerId: null,
         }
     },
+    created() {
+        this.$socket.registerCallBack('sellerData', this.getData)
+    },
     mounted() {
         this.initEchart()
-        this.getData()
+        // this.getData()
+
+        this.$socket.send({
+            action: 'getData',
+            socketType: 'sellerData',
+            chartName: 'seller',
+            value: '',
+        })
         window.addEventListener('resize', this.screeAdapter)
         // 页面初次立即适配
         this.screeAdapter()
@@ -27,13 +37,17 @@ export default {
     destroyed() {
         clearInterval(this.timerId)
         window.removeEventListener('resize', this.screeAdapter)
+        this.$socket.unRegisterCallBack('sellerData', this.getData)
+    },
+    computed: {
+        ...mapState(['theme']),
     },
     methods: {
         // 初始化echartsInstance对象      chalk:主题名称
         initEchart() {
             this.chartInstance = this.$echarts.init(
                 this.$refs.sellerRef,
-                'chalk'
+                this.theme
             )
             // 初始配置
             const initOption = {
@@ -94,9 +108,9 @@ export default {
             })
         },
         // 获取数据
-        async getData() {
+        getData(result) {
             // http://127.0.0.1:3000/api/seller
-            const { data: result } = await this.$http.get('seller')
+            // const { data: result } = await this.$http.get('seller')
             this.allData = result
             // 数据排序
             this.allData.sort((a, b) => {

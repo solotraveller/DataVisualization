@@ -1,6 +1,6 @@
 <template>
     <div class="com-container">
-        <div class="title">
+        <div class="title" :style="comStyle">
             <span :style="titleStyle">{{ showTitle }}</span>
             <span
                 :style="titleStyle"
@@ -24,6 +24,9 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+import { getThemeValue } from '../utils/theme_utils'
+
 export default {
     name: 'Trend',
     data() {
@@ -35,14 +38,26 @@ export default {
             titleFontSize: 0, // 标题字体大小
         }
     },
+    created() {
+        this.$socket.registerCallBack('trendData', this.getData)
+    },
     mounted() {
         this.initChart()
-        this.getData()
+        // this.getData()
+
+        // websocket 获取数据
+        this.$socket.send({
+            action: 'getData',
+            socketType: 'trendData',
+            chartName: 'trend',
+            value: '',
+        })
         window.addEventListener('resize', this.screenAdapter)
         this.screenAdapter()
     },
     destroyed() {
         window.removeEventListener('resize', this.screenAdapter)
+        this.$socket.unRegisterCallBack('trendData')
     },
     computed: {
         selectType() {
@@ -61,15 +76,22 @@ export default {
                 return this.allData[this.choiceType].title
             }
         },
+        comStyle() {
+            return {
+                fontSize: this.titleFontSize + 'px',
+                color: getThemeValue(this.theme).titleColor,
+            }
+        },
         titleStyle() {
             return { fontSize: this.titleFontSize + 'px' }
         },
+        ...mapState(['theme']),
     },
     methods: {
         initChart() {
             this.chartInstance = this.$echarts.init(
                 this.$refs.trendRef,
-                'chalk'
+                this.theme
             )
             const initOption = {
                 xAxis: { type: 'category' },
@@ -83,8 +105,6 @@ export default {
                 },
                 tooltip: {
                     trigger: 'axis',
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                    textStyle: { color: '#eee' },
                 },
                 legend: {
                     left: 20,
@@ -94,10 +114,11 @@ export default {
             }
             this.chartInstance.setOption(initOption)
         },
-        async getData() {
+        getData(result) {
             // http://127.0.0.1:3000/trend
-            const { data: result } = await this.$http.get('trend')
+            // const { data: result } = await this.$http.get('trend')
             this.allData = result
+            // console.log(this.allData);
             this.updateChart()
         },
         // 更新
@@ -154,13 +175,13 @@ export default {
         },
         // 适配
         screenAdapter() {
-            this.titleFontSize = (this.$refs.trendRef.offsetWidth / 100) * 2.5
+            this.titleFontSize = (this.$refs.trendRef.offsetWidth / 100) * 3.6
             const adapterOption = {
                 legend: {
                     itemWidth: this.titleFontSize,
                     itemHeight: this.titleFontSize,
                     itemGap: this.titleFontSize,
-                    textStyle: { fontSize: this.titleStyle / 1.5 },
+                    textStyle: { fontSize: this.titleStyle * 1.25 },
                 },
             }
             this.chartInstance.setOption(adapterOption)
